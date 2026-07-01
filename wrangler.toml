@@ -8,8 +8,3 @@ pages_build_output_dir = "."
 binding = "PACKS_KV"
 id = "63a40de0a05f4e75bfcbd5e76d8e9cb5"
 
-# R2 bucket that stores the uploaded .zip files.
-# Create it with: wrangler r2 bucket create packs4life-files
-[[r2_buckets]]
-binding = "PACKS_BUCKET"
-bucket_name = "packs4life-files"
