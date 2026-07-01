@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Packs4Life — Texture Pack Hub</title>
+<meta name="description" content="A community hub for Minecraft texture packs. Browse, download, and upload packs shared by the community.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div>
+        <div class="brand-name">Packs4Life</div>
+        <div class="brand-sub">Community Texture Hub</div>
+      </div>
+    </div>
+
+    <div class="nav-label">Navigate</div>
+    <a class="nav-item active" href="/index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7M5 10v10h14V10"/></svg>
+      Home <span class="dot"></span>
+    </a>
+    <a class="nav-item" href="/packs.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8L12 3 3 8l9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/></svg>
+      Browse Packs
+    </a>
+    <a class="nav-item" href="/upload.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M6 10l6-6 6 6"/><path d="M4 20h16"/></svg>
+      Upload a Pack
+    </a>
+
+    <div class="nav-label">Info</div>
+    <div class="nav-item" style="cursor:default">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>
+      Packs update live
+    </div>
+
+    <div class="sidebar-foot">
+      <a class="side-cta" href="/upload.html">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        Add your pack
+      </a>
+    </div>
+  </aside>
+
+  <div>
+    <div class="topbar">
+      <div class="tabs">
+        <a class="tab active" href="/index.html">Home</a>
+        <a class="tab" href="/packs.html">Packs</a>
+        <a class="tab" href="/upload.html">Upload</a>
+      </div>
+      <div class="status-pill"><span class="blip"></span> hub online</div>
+    </div>
+
+    <main class="main">
+      <div class="hero">
+        <span class="eyebrow"><span class="blip"></span> Built by the community</span>
+        <h1>Every pack lives<br><span>here.</span></h1>
+        <p>Packs4Life is a shared home for Minecraft texture packs. Grab one someone else made, or drop your own .zip and the hub takes it from there — no accounts, no waiting on a maintainer.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="/packs.html">Browse the hub →</a>
+          <a class="btn btn-ghost" href="/upload.html">Upload a pack</a>
+        </div>
+
+        <div class="stat-strip">
+          <div>
+            <div class="stat-num" id="stat-total">—</div>
+            <div class="stat-label">packs live</div>
+          </div>
+          <div>
+            <div class="stat-num" id="stat-downloads">—</div>
+            <div class="stat-label">downloads served</div>
+          </div>
+          <div>
+            <div class="stat-num" id="stat-size">—</div>
+            <div class="stat-label">stored on the hub</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <span class="kicker">Recently added</span>
+        <span class="rule"></span>
+        <a class="action" href="/packs.html">View all →</a>
+      </div>
+      <div class="grid" id="recent-grid">
+        <div class="empty-state" style="grid-column:1/-1">Loading packs…</div>
+      </div>
+
+      <div class="section-head">
+        <span class="kicker">Links</span>
+        <span class="rule"></span>
+      </div>
+      <div class="link-row">
+        <a class="link-card" href="#" target="_blank" rel="noopener">
+          <div class="link-left">
+            <div class="link-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.3 4.5A18.3 18.3 0 0016 3.1a13 13 0 00-.6 1.3 17 17 0 00-5 0 12 12 0 00-.6-1.3A18.2 18.2 0 004.7 4.5C2 8.6 1.3 12.6 1.6 16.5a18.3 18.3 0 005.6 2.9c.4-.6.8-1.3 1.2-2a12 12 0 01-1.9-.9l.5-.4a13 13 0 0010 0l.5.4c-.6.4-1.3.6-1.9.9.3.7.8 1.4 1.2 2a18.3 18.3 0 005.6-2.9c.4-4.5-.7-8.5-2.7-12zM8.7 14.1c-.9 0-1.7-.9-1.7-2s.7-2 1.7-2c.9 0 1.7.9 1.7 2s-.8 2-1.7 2zm6.6 0c-.9 0-1.7-.9-1.7-2s.8-2 1.7-2c1 0 1.7.9 1.7 2s-.7 2-1.7 2z"/></svg>
+            </div>
+            <div>
+              <div class="link-title">Join the Discord</div>
+              <div class="link-sub">Talk packs, report bugs, get pinged on new drops</div>
+            </div>
+          </div>
+          <span>→</span>
+        </a>
+        <a class="link-card" href="#" target="_blank" rel="noopener">
+          <div class="link-left">
+            <div class="link-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a30 30 0 00-.5-5.6 3 3 0 00-2.1-2.1C17.6 3.8 12 3.8 12 3.8s-5.6 0-7.4.5A3 3 0 002.5 6.4 30 30 0 002 12a30 30 0 00.5 5.6 3 3 0 002.1 2.1c1.8.5 7.4.5 7.4.5s5.6 0 7.4-.5a3 3 0 002.1-2.1c.4-1.8.5-3.7.5-5.6zM10 15.5v-7l6 3.5-6 3.5z"/></svg>
+            </div>
+            <div>
+              <div class="link-title">Watch on YouTube</div>
+              <div class="link-sub">Pack showcases and install walkthroughs</div>
+            </div>
+          </div>
+          <span>→</span>
+        </a>
+      </div>
+    </main>
+
+    <footer class="foot">
+      <span>Packs4Life — community texture pack hub</span>
+      <span class="mono">hosted on cloudflare pages</span>
+    </footer>
+  </div>
+</div>
+
+<script src="/assets/app.js"></script>
+<script>
+(async function () {
+  try {
+    const packs = await fetchPacks();
+    document.getElementById("stat-total").textContent = packs.length;
+    document.getElementById("stat-downloads").textContent =
+      packs.reduce((a, p) => a + (p.downloads || 0), 0);
+    const totalBytes = packs.reduce((a, p) => a + (p.size || 0), 0);
+    document.getElementById("stat-size").textContent = fmtBytes(totalBytes);
+
+    const grid = document.getElementById("recent-grid");
+    if (!packs.length) {
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+        <h3>No packs yet</h3>
+        <p>Be the first — <a href="/upload.html" style="color:var(--lime)">upload one</a>.</p>
+      </div>`;
+      return;
+    }
+    const recent = [...packs].sort((a, b) => new Date(b.uploaded) - new Date(a.uploaded)).slice(0, 3);
+    grid.innerHTML = recent.map(packCardHTML).join("");
+  } catch (e) {
+    document.getElementById("recent-grid").innerHTML =
+      `<div class="empty-state" style="grid-column:1/-1">Couldn't reach the hub. Try refreshing.</div>`;
+  }
+})();
+</script>
+</body>
+</html>

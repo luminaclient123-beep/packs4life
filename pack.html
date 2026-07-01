@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pack — Packs4Life</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div>
+        <div class="brand-name">Packs4Life</div>
+        <div class="brand-sub">Community Texture Hub</div>
+      </div>
+    </div>
+    <div class="nav-label">Navigate</div>
+    <a class="nav-item" href="/index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7M5 10v10h14V10"/></svg>
+      Home
+    </a>
+    <a class="nav-item active" href="/packs.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8L12 3 3 8l9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/></svg>
+      Browse Packs
+    </a>
+    <a class="nav-item" href="/upload.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M6 10l6-6 6 6"/><path d="M4 20h16"/></svg>
+      Upload a Pack
+    </a>
+    <div class="sidebar-foot">
+      <a class="side-cta" href="/upload.html">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        Add your pack
+      </a>
+    </div>
+  </aside>
+
+  <div>
+    <div class="topbar">
+      <div class="tabs">
+        <a class="tab" href="/index.html">Home</a>
+        <a class="tab active" href="/packs.html">Packs</a>
+        <a class="tab" href="/upload.html">Upload</a>
+      </div>
+      <div class="status-pill"><span class="blip"></span> hub online</div>
+    </div>
+
+    <main class="main" id="detail" style="max-width:760px;">
+      <div class="empty-state">Loading pack…</div>
+    </main>
+
+    <footer class="foot">
+      <span>Packs4Life — community texture pack hub</span>
+      <span class="mono">hosted on cloudflare pages</span>
+    </footer>
+  </div>
+</div>
+
+<script src="/assets/app.js"></script>
+<script>
+(async function () {
+  const id = new URLSearchParams(location.search).get("id");
+  const el = document.getElementById("detail");
+  if (!id) { el.innerHTML = `<div class="empty-state"><h3>No pack specified</h3></div>`; return; }
+
+  try {
+    const packs = await fetchPacks();
+    const p = packs.find(x => x.id === id);
+    if (!p) { el.innerHTML = `<div class="empty-state"><h3>Pack not found</h3><p>It may have been removed.</p></div>`; return; }
+
+    el.innerHTML = `
+      <a href="/packs.html" class="mono" style="color:var(--muted);font-size:12.5px;">← back to all packs</a>
+      <div style="display:flex;align-items:center;gap:14px;margin-top:16px;">
+        ${pixelIconHTML(p.id).replace('grid-template-columns: repeat(4,5px)', 'grid-template-columns: repeat(4,10px)').replace('grid-template-rows: repeat(4,5px)', 'grid-template-rows: repeat(4,10px)')}
+        <div>
+          <span class="tag">${escapeHTML(p.version || "v1")}</span>
+        </div>
+      </div>
+      <h1 style="font-size:36px;margin-top:14px;">${escapeHTML(p.name)}</h1>
+      <p style="color:var(--muted);margin-top:10px;max-width:560px;">${escapeHTML(p.description || "No description provided.")}</p>
+
+      <div class="panel" style="margin-top:26px;">
+        <div class="card-meta" style="border:none;padding:0;margin:0;gap:20px;font-size:12.5px;">
+          <span>⬇ ${p.downloads || 0} downloads</span>
+          <span>${fmtBytes(p.size)}</span>
+          <span>uploaded ${timeAgo(p.uploaded)}</span>
+          <span>by ${escapeHTML(p.author || "anonymous")}</span>
+        </div>
+        <a class="btn btn-primary" style="margin-top:18px;width:100%;justify-content:center;" href="/api/download/${encodeURIComponent(p.id)}">
+          ⬇ Download .zip
+        </a>
+      </div>`;
+  } catch (e) {
+    el.innerHTML = `<div class="empty-state"><h3>Couldn't load this pack</h3></div>`;
+  }
+})();
+</script>
+</body>
+</html>
