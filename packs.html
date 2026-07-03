@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Browse Packs — Packs4Life</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div>
+        <div class="brand-name">Packs4Life</div>
+        <div class="brand-sub">Minecraft texture packs</div>
+      </div>
+    </div>
+
+    <div class="nav-label">Navigate</div>
+    <a class="nav-item" href="/index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7M5 10v10h14V10"/></svg>
+      Home
+    </a>
+    <a class="nav-item active" href="/packs.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8L12 3 3 8l9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/></svg>
+      Browse Packs <span class="dot"></span>
+    </a>
+    <a class="nav-item" href="/upload.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M6 10l6-6 6 6"/><path d="M4 20h16"/></svg>
+      Upload a Pack
+    </a>
+
+    <div class="sidebar-foot">
+      <a class="side-cta" href="/upload.html">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        Add your pack
+      </a>
+    </div>
+  </aside>
+
+  <div>
+    <div class="topbar">
+      <div class="tabs">
+        <a class="tab" href="/index.html">Home</a>
+        <a class="tab active" href="/packs.html">Packs</a>
+        <a class="tab" href="/upload.html">Upload</a>
+      </div>
+      <div id="nav-account" class="status-pill">…</div>
+    </div>
+
+    <main class="main">
+      <span class="eyebrow"><span class="blip"></span> <span id="count-label">Loading…</span></span>
+      <h1 style="font-size:38px;margin-top:14px;">All texture packs</h1>
+      <p style="color:var(--muted);margin-top:8px;max-width:520px;">Newest packs first. Click one to read the full description and grab the download.</p>
+
+      <div class="filter-bar" id="sort-filter" style="margin-top:28px;">
+        <input type="search" id="search" placeholder="Search packs by name or tag…">
+        <button class="chip active" data-sort="new">Newest</button>
+        <button class="chip" data-sort="downloads">Most downloaded</button>
+        <button class="chip" data-sort="az">A–Z</button>
+      </div>
+
+      <div class="filter-bar" id="category-filter">
+        <button class="chip active" data-category="all">All</button>
+        <button class="chip" data-category="pvp">🟩 PvP</button>
+        <button class="chip" data-category="fps">🟦 FPS</button>
+        <button class="chip" data-category="gui">🟪 GUI</button>
+        <button class="chip" data-category="faithful">🟧 Faithful</button>
+        <button class="chip" data-category="horror">🔴 Horror</button>
+      </div>
+
+      <div class="grid" id="all-grid">
+        <div class="empty-state" style="grid-column:1/-1">Loading packs…</div>
+      </div>
+    </main>
+
+    <footer class="foot">
+      <span>Packs4Life</span>
+      <span class="mono">hosted on cloudflare pages</span>
+    </footer>
+  </div>
+</div>
+
+<script src="/assets/app.js"></script>
+<script>
+initAccountMenu("nav-account");
+
+let allPacks = [];
+let sortMode = "new";
+let categoryFilter = "all";
+
+function render() {
+  const q = document.getElementById("search").value.trim().toLowerCase();
+  let list = allPacks.filter(p =>
+    !q || p.name.toLowerCase().includes(q) || (p.description || "").toLowerCase().includes(q)
+  );
+
+  if (categoryFilter !== "all") {
+    list = list.filter(p => (p.categories || []).includes(categoryFilter));
+  }
+
+  if (sortMode === "new") list.sort((a, b) => new Date(b.uploaded) - new Date(a.uploaded));
+  if (sortMode === "downloads") list.sort((a, b) => (b.downloads || 0) - (a.downloads || 0));
+  if (sortMode === "az") list.sort((a, b) => a.name.localeCompare(b.name));
+
+  document.getElementById("count-label").textContent = `${allPacks.length} pack${allPacks.length === 1 ? "" : "s"} on the hub`;
+
+  const grid = document.getElementById("all-grid");
+  if (!list.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <h3>Nothing matches</h3>
+      <p>Try a different search, or <a href="/upload.html" style="color:var(--lime)">upload the first one</a>.</p>
+    </div>`;
+    return;
+  }
+  grid.innerHTML = list.map(packCardHTML).join("");
+}
+
+document.getElementById("search").addEventListener("input", render);
+document.querySelectorAll("#category-filter .chip").forEach(chip => {
+  chip.addEventListener("click", () => {
+    document.querySelectorAll("#category-filter .chip").forEach(c => c.classList.remove("active"));
+    chip.classList.add("active");
+    categoryFilter = chip.dataset.category;
+    render();
+  });
+});
+document.querySelectorAll("#sort-filter .chip").forEach(chip => {
+  chip.addEventListener("click", () => {
+    document.querySelectorAll("#sort-filter .chip").forEach(c => c.classList.remove("active"));
+    chip.classList.add("active");
+    sortMode = chip.dataset.sort;
+    render();
+  });
+});
+
+(async function () {
+  try {
+    allPacks = await fetchPacks();
+    render();
+  } catch (e) {
+    document.getElementById("all-grid").innerHTML =
+      `<div class="empty-state" style="grid-column:1/-1">Couldn't reach the hub. Try refreshing.</div>`;
+  }
+})();
+</script>
+</body>
+</html>

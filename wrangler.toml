@@ -1,0 +1,10 @@
+name = "packs4life"
+compatibility_date = "2024-11-01"
+pages_build_output_dir = "."
+
+# KV namespace that stores the pack metadata index (packs:index key).
+# Create it with: wrangler kv namespace create PACKS_KV
+[[kv_namespaces]]
+binding = "PACKS_KV"
+id = "63a40de0a05f4e75bfcbd5e76d8e9cb5"
+
