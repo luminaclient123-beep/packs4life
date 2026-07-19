@@ -1,11 +1,18 @@
 // POST /api/upload — requires a logged-in session. Accepts
-// multipart/form-data: name, version, description, file (.zip).
+// multipart/form-data: name, version, description, categories (csv),
+// youtube (optional URL), thumbnail (optional image), file (.zip).
 // The author is taken from the logged-in account, not user input.
 
 import { getCurrentUser } from "../../lib/auth.js";
 
 const MAX_BYTES = 18 * 1024 * 1024; // 18MB raw file cap (safe under KV's 25MB value limit after base64)
+const MAX_THUMB_BYTES = 1.5 * 1024 * 1024; // 1.5MB raw thumbnail cap
 const MAX_LIST = 500; // cap how many packs we keep listed, oldest fall off
+
+const VALID_CATEGORIES = [
+  "Combat", "Cursed", "Decoration", "Modded", "Realistic",
+  "Simplistic", "Themed", "Tweaks", "Utility", "Vanilla Like",
+];
 
 function badRequest(msg, status = 400) {
   return new Response(JSON.stringify({ error: msg }), {
@@ -31,6 +38,22 @@ function arrayBufferToBase64(buffer) {
   return btoa(binary);
 }
 
+function extractYoutubeId(url) {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes("youtu.be")) return u.pathname.slice(1) || null;
+    if (u.hostname.includes("youtube.com")) {
+      if (u.searchParams.get("v")) return u.searchParams.get("v");
+      const m = u.pathname.match(/\/(embed|shorts)\/([^/?]+)/);
+      if (m) return m[2];
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 export async function onRequestPost(context) {
   const { request, env } = context;
 
@@ -49,7 +72,10 @@ export async function onRequestPost(context) {
   const name = (form.get("name") || "").toString().trim();
   const version = (form.get("version") || "").toString().trim();
   const description = (form.get("description") || "").toString().trim();
+  const youtubeRaw = (form.get("youtube") || "").toString().trim();
+  const categoriesRaw = (form.get("categories") || "").toString().trim();
   const file = form.get("file");
+  const thumbnail = form.get("thumbnail");
 
   if (!name || !version || !description) {
     return badRequest("Missing one of: name, version, description.");
@@ -64,13 +90,33 @@ export async function onRequestPost(context) {
     return badRequest("File is over the 18MB limit.");
   }
 
+  const categories = categoriesRaw
+    ? categoriesRaw.split(",").map((c) => c.trim()).filter((c) => VALID_CATEGORIES.includes(c))
+    : [];
+
+  const youtubeId = extractYoutubeId(youtubeRaw);
+  if (youtubeRaw && !youtubeId) {
+    return badRequest("That doesn't look like a valid YouTube link.");
+  }
+
   const id = crypto.randomUUID();
   const fileKey = `file:${id}`;
 
   const buffer = await file.arrayBuffer();
   const base64 = arrayBufferToBase64(buffer);
-
   await env.PACKS_KV.put(fileKey, base64);
+
+  let thumbnailDataUrl = null;
+  if (thumbnail instanceof File && thumbnail.size > 0) {
+    if (thumbnail.size > MAX_THUMB_BYTES) {
+      return badRequest("Thumbnail image is over the 1.5MB limit.");
+    }
+    if (!thumbnail.type.startsWith("image/")) {
+      return badRequest("Thumbnail must be an image file.");
+    }
+    const thumbBuffer = await thumbnail.arrayBuffer();
+    thumbnailDataUrl = `data:${thumbnail.type};base64,${arrayBufferToBase64(thumbBuffer)}`;
+  }
 
   const record = {
     id,
@@ -80,6 +126,9 @@ export async function onRequestPost(context) {
     authorId: user.id,
     author: user.name,
     description: description.slice(0, 400),
+    categories,
+    youtubeId,
+    thumbnail: thumbnailDataUrl,
     size: file.size,
     fileKey,
     downloads: 0,

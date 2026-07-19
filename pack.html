@@ -12,7 +12,6 @@
 
   <div class="topbar glass">
     <a class="brand" href="/index.html" style="text-decoration:none;">
-      <div class="brand-mark"></div>
       <div class="brand-name">Packs<span>4</span>Life</div>
     </a>
     <div class="tabs">
@@ -23,7 +22,7 @@
     <div id="nav-account" class="status-pill">…</div>
   </div>
 
-  <main class="main" id="detail" style="max-width:640px;padding-top:50px;">
+  <main class="main" id="detail" style="max-width:680px;padding-top:50px;">
     <div class="empty-state">Loading pack…</div>
   </main>
 
@@ -35,9 +34,9 @@
 
 <script src="/assets/app.js"></script>
 <script>
-renderNavAccount();
-
 (async function () {
+  const me = await renderNavAccount();
+
   const id = new URLSearchParams(location.search).get("id");
   const el = document.getElementById("detail");
   if (!id) { el.innerHTML = `<div class="empty-state"><h3>No pack specified</h3></div>`; return; }
@@ -47,14 +46,18 @@ renderNavAccount();
     const p = packs.find(x => x.id === id);
     if (!p) { el.innerHTML = `<div class="empty-state"><h3>Pack not found</h3><p>It may have been removed.</p></div>`; return; }
 
+    const isOwner = me && me.id === p.authorId;
+
     el.innerHTML = `
       <a href="/packs.html" class="mono" style="color:var(--muted);font-size:12.5px;">← back to all packs</a>
       <div style="display:flex;align-items:center;gap:16px;margin-top:16px;">
-        ${pixelIconHTML(p.id, 10)}
+        ${packThumbHTML(p, 10)}
         <span class="tag">${escapeHTML(p.version || "v1")}</span>
       </div>
       <h1 style="font-family:var(--font-display);font-weight:800;font-size:clamp(28px,4.5vw,38px);margin-top:16px;letter-spacing:-.02em;">${escapeHTML(p.name)}</h1>
       <p style="color:var(--muted);margin-top:10px;max-width:560px;line-height:1.6;">${escapeHTML(p.description || "No description provided.")}</p>
+      ${categoryTagsHTML(p.categories)}
+      ${youtubeEmbedHTML(p.youtubeId)}
 
       <div class="panel" style="margin-top:26px;">
         <div class="card-meta" style="border:none;padding:0;margin:0;gap:20px;font-size:12.5px;">
@@ -66,7 +69,25 @@ renderNavAccount();
         <a class="btn btn-primary" style="margin-top:18px;width:100%;justify-content:center;" href="/api/download/${encodeURIComponent(p.id)}">
           ⬇ Download .zip
         </a>
+        ${isOwner ? `<button class="btn btn-danger" id="delete-btn" style="margin-top:10px;width:100%;justify-content:center;">Delete this pack</button>` : ""}
       </div>`;
+
+    if (isOwner) {
+      document.getElementById("delete-btn").addEventListener("click", async () => {
+        if (!confirm("Delete this pack permanently? This can't be undone.")) return;
+        const res = await fetch("/api/delete-pack", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ id: p.id }),
+        });
+        if (res.ok) {
+          location.href = "/packs.html";
+        } else {
+          const data = await res.json().catch(() => ({}));
+          alert(data.error || "Could not delete this pack.");
+        }
+      });
+    }
   } catch (e) {
     el.innerHTML = `<div class="empty-state"><h3>Couldn't load this pack</h3></div>`;
   }

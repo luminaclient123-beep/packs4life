@@ -12,7 +12,6 @@
 
   <div class="topbar glass">
     <a class="brand" href="/index.html" style="text-decoration:none;">
-      <div class="brand-mark"></div>
       <div class="brand-name">Packs<span>4</span>Life</div>
     </a>
     <div class="tabs">
@@ -48,10 +47,16 @@ function renderNav(me) {
     : `<a href="/login.html" style="color:var(--text);font-weight:700;">Sign in</a>`;
 }
 
+function avatarPreviewHTML(me) {
+  return me.avatar
+    ? `<img src="${me.avatar}" style="width:100%;height:100%;object-fit:cover;">`
+    : pixelIconHTML(me.id, 14);
+}
+
 function ownProfileHTML(me) {
   return `
     <div style="display:flex;align-items:center;gap:16px;">
-      ${me.avatar ? `<img src="${me.avatar}" width="64" height="64" style="border-radius:50%;border:1px solid var(--glass-border);">` : pixelIconHTML(me.id, 14)}
+      <div class="preview round" id="avatar-preview" style="width:64px;height:64px;">${avatarPreviewHTML(me)}</div>
       <div>
         <h1 style="font-family:var(--font-display);font-weight:800;font-size:26px;letter-spacing:-.01em;">${escapeHTML(me.name)}</h1>
         <div style="color:var(--muted);font-size:12.5px;">${escapeHTML(me.email || "")}</div>
@@ -59,6 +64,16 @@ function ownProfileHTML(me) {
     </div>
 
     <div class="panel" style="margin-top:24px;">
+      <div class="field">
+        <label>Profile picture</label>
+        <div class="image-well">
+          <div class="preview round" id="avatar-preview-2">${avatarPreviewHTML(me)}</div>
+          <div>
+            <button type="button" class="btn btn-ghost" id="avatar-btn">Choose image</button>
+            <input type="file" id="avatar-input" accept="image/*" style="display:none;">
+          </div>
+        </div>
+      </div>
       <div class="field">
         <label for="name">Display name</label>
         <input type="text" id="name" value="${escapeHTML(me.name)}" maxlength="40">
@@ -86,7 +101,7 @@ function ownProfileHTML(me) {
 function publicProfileHTML(user, packs) {
   return `
     <div style="display:flex;align-items:center;gap:16px;">
-      ${user.avatar ? `<img src="${user.avatar}" width="64" height="64" style="border-radius:50%;border:1px solid var(--glass-border);">` : pixelIconHTML(user.id, 14)}
+      <div class="preview round" style="width:64px;height:64px;">${avatarPreviewHTML(user)}</div>
       <div>
         <h1 style="font-family:var(--font-display);font-weight:800;font-size:26px;letter-spacing:-.01em;">${escapeHTML(user.name)}</h1>
         <div style="color:var(--muted);font-size:12.5px;">member since ${new Date(user.joined).toLocaleDateString()}</div>
@@ -103,6 +118,8 @@ function publicProfileHTML(user, packs) {
     </div>
   `;
 }
+
+let pendingAvatarDataUrl = null;
 
 (async function () {
   const main = document.getElementById("profile-main");
@@ -133,15 +150,35 @@ function publicProfileHTML(user, packs) {
 
   main.innerHTML = ownProfileHTML(me);
 
+  const avatarBtn = document.getElementById("avatar-btn");
+  const avatarInput = document.getElementById("avatar-input");
+  avatarBtn.addEventListener("click", () => avatarInput.click());
+  avatarInput.addEventListener("change", async () => {
+    const f = avatarInput.files[0];
+    if (!f) return;
+    try {
+      pendingAvatarDataUrl = await fileToResizedDataURL(f, 320, 0.85);
+      const html = `<img src="${pendingAvatarDataUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+      document.getElementById("avatar-preview").innerHTML = html;
+      document.getElementById("avatar-preview-2").innerHTML = html;
+    } catch (e) {
+      const msg = document.getElementById("save-msg");
+      msg.textContent = e.message;
+      msg.className = "form-msg show err";
+    }
+  });
+
   document.getElementById("save-btn").addEventListener("click", async () => {
     const name = document.getElementById("name").value.trim();
     const bio = document.getElementById("bio").value.trim();
     const msg = document.getElementById("save-msg");
     try {
+      const body = { name, bio };
+      if (pendingAvatarDataUrl) body.avatar = pendingAvatarDataUrl;
       const res = await fetch("/api/profile-update", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name, bio }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Could not save.");

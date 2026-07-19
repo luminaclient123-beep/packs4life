@@ -1,5 +1,7 @@
 import { getCurrentUser } from "../../lib/auth.js";
 
+const MAX_AVATAR_CHARS = 400 * 1024; // ~300KB image once base64-encoded
+
 export async function onRequestPost(context) {
   const { request, env } = context;
 
@@ -31,7 +33,20 @@ export async function onRequestPost(context) {
     });
   }
 
-  const updated = { ...user, name, bio };
+  let avatar = user.avatar || null;
+  if (typeof body.avatar === "string" && body.avatar.startsWith("data:image/")) {
+    if (body.avatar.length > MAX_AVATAR_CHARS) {
+      return new Response(JSON.stringify({ error: "Profile picture is too large." }), {
+        status: 400,
+        headers: { "content-type": "application/json" },
+      });
+    }
+    avatar = body.avatar;
+  } else if (body.avatar === null) {
+    avatar = null;
+  }
+
+  const updated = { ...user, name, bio, avatar };
   await env.PACKS_KV.put(`user:${user.id}`, JSON.stringify(updated));
 
   const { passwordHash, passwordSalt, ...publicUser } = updated;

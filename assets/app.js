@@ -1,13 +1,45 @@
 // Packs4Life — shared client logic
 
+const CATEGORIES = [
+  "Combat", "Cursed", "Decoration", "Modded", "Realistic",
+  "Simplistic", "Themed", "Tweaks", "Utility", "Vanilla Like",
+];
+
+// Real Java Edition releases through 1.21.x, then Mojang's new
+// year.drop versioning that started with 26.0.
+const MC_VERSIONS = [
+  "26.2", "26.1", "26.0",
+  "1.21.8", "1.21.7", "1.21.6", "1.21.5", "1.21.4", "1.21.3", "1.21.2", "1.21.1", "1.21",
+  "1.20.6", "1.20.5", "1.20.4", "1.20.3", "1.20.2", "1.20.1", "1.20",
+  "1.19.4", "1.19.3", "1.19.2", "1.19.1", "1.19",
+  "1.18.2", "1.18.1", "1.18",
+  "1.17.1", "1.17",
+  "1.16.5", "1.16.4", "1.16.3", "1.16.2", "1.16.1", "1.16",
+  "1.15.2", "1.15.1", "1.15",
+  "1.14.4", "1.14.3", "1.14.2", "1.14.1", "1.14",
+  "1.13.2", "1.13.1", "1.13",
+  "1.12.2", "1.12.1", "1.12",
+  "1.11.2", "1.11.1", "1.11",
+  "1.10.2", "1.10",
+  "1.9.4", "1.9",
+  "1.8.9", "1.8",
+  "1.7.10", "1.7",
+  "1.6.4", "1.6",
+  "1.5.2", "1.5",
+  "1.4.7", "1.4",
+  "1.3.2", "1.3",
+  "1.2.5", "1.2",
+  "1.1", "1.0",
+];
+
 function hashStr(s) {
   let h = 0;
   for (let i = 0; i < s.length; i++) { h = (h * 31 + s.charCodeAt(i)) | 0; }
   return Math.abs(h);
 }
 
-// Deterministic 4x4 pixel glyph per pack/user, so every card gets a
-// recognizable little "block" icon without anyone drawing it by hand.
+// Deterministic 4x4 pixel glyph per pack/user, used as a fallback
+// whenever there's no uploaded thumbnail or profile picture.
 function pixelIconHTML(seed, cellPx) {
   const px = cellPx || 5;
   const h = hashStr(String(seed || "pack"));
@@ -47,15 +79,39 @@ async function fetchPacks() {
   return res.json();
 }
 
+function youtubeEmbedHTML(youtubeId) {
+  if (!youtubeId) return "";
+  return `<div class="yt-embed">
+    <iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(youtubeId)}"
+      title="Pack showcase video" frameborder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowfullscreen loading="lazy"></iframe>
+  </div>`;
+}
+
+function packThumbHTML(p, size) {
+  const px = size || 5;
+  if (p.thumbnail) {
+    return `<img class="pack-thumb" src="${p.thumbnail}" alt="" style="width:${px * 4 + 16}px;height:${px * 4 + 16}px;">`;
+  }
+  return pixelIconHTML(p.id, px);
+}
+
+function categoryTagsHTML(categories) {
+  if (!categories || !categories.length) return "";
+  return `<div class="cat-tags">${categories.map(c => `<span class="cat-tag">${escapeHTML(c)}</span>`).join("")}</div>`;
+}
+
 function packCardHTML(p) {
   return `
     <a class="card" href="/pack.html?id=${encodeURIComponent(p.id)}">
       <div class="card-top">
         <span class="tag">${escapeHTML(p.version || "v1")}</span>
-        ${pixelIconHTML(p.id)}
+        ${packThumbHTML(p)}
       </div>
       <h3>${escapeHTML(p.name)}</h3>
       <p>${escapeHTML(p.description || "No description provided.")}</p>
+      ${categoryTagsHTML(p.categories)}
       <div class="card-meta">
         <span>⬇ ${p.downloads || 0}</span>
         <span>${fmtBytes(p.size)}</span>
@@ -87,4 +143,30 @@ async function renderNavAccount() {
     nav.innerHTML = `<a href="/login.html" style="color:var(--text);font-weight:700;">Sign in</a>`;
     return null;
   }
+}
+
+/* Read a File input as a resized, compressed data URL so avatars/
+   thumbnails stay well under KV's value size limits. */
+function fileToResizedDataURL(file, maxDim, quality) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Could not read that file."));
+    reader.onload = () => {
+      img.onerror = () => reject(new Error("Could not read that image."));
+      img.onload = () => {
+        let { width, height } = img;
+        const scale = Math.min(1, maxDim / Math.max(width, height));
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", quality || 0.85));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
 }

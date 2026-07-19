@@ -12,7 +12,6 @@
 
   <div class="topbar glass">
     <a class="brand" href="/index.html" style="text-decoration:none;">
-      <div class="brand-mark"></div>
       <div class="brand-name">Packs<span>4</span>Life</div>
     </a>
     <div class="tabs">
@@ -26,21 +25,48 @@
   <main class="main" style="max-width:600px;padding-top:50px;">
     <span class="eyebrow"><span class="blip"></span> Share it with everyone</span>
     <h1 style="font-family:var(--font-display);font-weight:800;font-size:clamp(28px,4.5vw,38px);margin-top:16px;letter-spacing:-.02em;">Upload a texture pack</h1>
-    <p style="color:var(--muted);margin-top:8px;">Fill in the details and drop your <code class="mono">.zip</code>. Once it uploads, it shows up on the hub for everyone — no review queue.</p>
 
     <form class="panel" id="upload-form" style="margin-top:26px;">
       <div class="field">
         <label for="name">Pack name</label>
-        <input type="text" id="name" required maxlength="60" placeholder="e.g. Frostbite 32x">
+        <input type="text" id="name" required maxlength="60" placeholder="e.g. Faithful 32x">
       </div>
+
       <div class="field">
-        <label for="version">Version</label>
-        <input type="text" id="version" required maxlength="20" placeholder="e.g. v1.0 or 1.21.4">
+        <label for="version">Minecraft version</label>
+        <select id="version" required></select>
       </div>
+
       <div class="field">
         <label for="description">Description</label>
         <textarea id="description" required maxlength="400" placeholder="What does this pack change? Resolution, theme, what it's built for…"></textarea>
       </div>
+
+      <div class="field">
+        <label>Categories</label>
+        <div class="cat-picker" id="cat-picker"></div>
+      </div>
+
+      <div class="field">
+        <label for="thumbnail">Pack thumbnail (optional)</label>
+        <div class="image-well">
+          <div class="preview" id="thumb-preview">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--muted-dim)"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>
+          </div>
+          <div>
+            <button type="button" class="btn btn-ghost" id="thumb-btn">Choose image</button>
+            <input type="file" id="thumbnail" accept="image/*" style="display:none;">
+            <p style="color:var(--muted-dim);font-size:11.5px;margin-top:8px;">Shown on the pack's card and page.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="youtube">YouTube showcase (optional)</label>
+        <input type="text" id="youtube" placeholder="https://youtube.com/watch?v=…">
+        <div class="yt-preview" id="yt-preview"><div class="yt-preview-inner" id="yt-preview-inner"></div></div>
+      </div>
+
       <div class="field">
         <label>Pack file (.zip)</label>
         <div class="dropzone" id="dropzone">
@@ -52,6 +78,7 @@
         </div>
         <input type="file" id="file" accept=".zip" style="display:none;">
       </div>
+
       <div class="progress-track" id="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
       <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px;" id="submit-btn">Upload to the hub</button>
       <div class="form-msg" id="form-msg"></div>
@@ -71,6 +98,23 @@ const fileInput = document.getElementById("file");
 const zipName = document.getElementById("zip-name");
 const dzDefault = document.getElementById("dz-default");
 let chosenFile = null;
+let chosenThumbDataUrl = null;
+
+// Version dropdown
+const versionSelect = document.getElementById("version");
+MC_VERSIONS.forEach(v => {
+  const opt = document.createElement("option");
+  opt.value = v; opt.textContent = v;
+  versionSelect.appendChild(opt);
+});
+
+// Category picker
+const catPicker = document.getElementById("cat-picker");
+CATEGORIES.forEach(c => {
+  const label = document.createElement("label");
+  label.innerHTML = `<input type="checkbox" value="${c}"><span>${c}</span>`;
+  catPicker.appendChild(label);
+});
 
 (async function gate() {
   const res = await fetch("/api/auth/me");
@@ -91,6 +135,49 @@ let chosenFile = null;
       </div>`;
   }
 })();
+
+// Thumbnail picker
+const thumbBtn = document.getElementById("thumb-btn");
+const thumbInput = document.getElementById("thumbnail");
+const thumbPreview = document.getElementById("thumb-preview");
+thumbBtn.addEventListener("click", () => thumbInput.click());
+thumbInput.addEventListener("change", async () => {
+  const f = thumbInput.files[0];
+  if (!f) return;
+  try {
+    chosenThumbDataUrl = await fileToResizedDataURL(f, 480, 0.85);
+    thumbPreview.innerHTML = `<img src="${chosenThumbDataUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+  } catch (e) {
+    showMsg(e.message, "err");
+  }
+});
+
+// YouTube preview
+const ytInput = document.getElementById("youtube");
+const ytPreview = document.getElementById("yt-preview");
+const ytPreviewInner = document.getElementById("yt-preview-inner");
+function extractYoutubeId(url) {
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes("youtu.be")) return u.pathname.slice(1) || null;
+    if (u.hostname.includes("youtube.com")) {
+      if (u.searchParams.get("v")) return u.searchParams.get("v");
+      const m = u.pathname.match(/\/(embed|shorts)\/([^/?]+)/);
+      if (m) return m[2];
+    }
+  } catch { return null; }
+  return null;
+}
+ytInput.addEventListener("input", () => {
+  const id = extractYoutubeId(ytInput.value.trim());
+  if (id) {
+    ytPreviewInner.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}" frameborder="0" allowfullscreen loading="lazy"></iframe>`;
+    ytPreview.classList.add("show");
+  } else {
+    ytPreview.classList.remove("show");
+    ytPreviewInner.innerHTML = "";
+  }
+});
 
 dropzone.addEventListener("click", () => fileInput.click());
 ["dragover", "dragenter"].forEach(ev => dropzone.addEventListener(ev, (e) => { e.preventDefault(); dropzone.classList.add("drag"); }));
@@ -113,6 +200,12 @@ function showMsg(text, kind) {
   el.className = `form-msg show ${kind}`;
 }
 
+async function dataUrlToFile(dataUrl, filename) {
+  const res = await fetch(dataUrl);
+  const blob = await res.blob();
+  return new File([blob], filename, { type: blob.type });
+}
+
 document.getElementById("upload-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   if (!chosenFile) { showMsg("Choose a .zip file first.", "err"); return; }
@@ -124,18 +217,25 @@ document.getElementById("upload-form").addEventListener("submit", async (e) => {
   btn.textContent = "Uploading…";
   track.classList.add("show");
 
+  const selectedCategories = [...catPicker.querySelectorAll("input:checked")].map(i => i.value);
+
   const fd = new FormData();
   fd.append("name", document.getElementById("name").value.trim());
-  fd.append("version", document.getElementById("version").value.trim());
+  fd.append("version", versionSelect.value);
   fd.append("description", document.getElementById("description").value.trim());
+  fd.append("categories", selectedCategories.join(","));
+  fd.append("youtube", ytInput.value.trim());
   fd.append("file", chosenFile);
+  if (chosenThumbDataUrl) {
+    fd.append("thumbnail", await dataUrlToFile(chosenThumbDataUrl, "thumb.jpg"));
+  }
 
   try {
     const result = await new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open("POST", "/api/upload");
       xhr.upload.onprogress = (ev) => { if (ev.lengthComputable) fill.style.width = `${Math.round((ev.loaded / ev.total) * 100)}%`; };
-      xhr.onload = () => { if (xhr.status >= 200 && xhr.status < 300) resolve(JSON.parse(xhr.responseText)); else reject(new Error(xhr.responseText || "Upload failed")); };
+      xhr.onload = () => { if (xhr.status >= 200 && xhr.status < 300) resolve(JSON.parse(xhr.responseText)); else reject(new Error((JSON.parse(xhr.responseText || "{}").error) || "Upload failed")); };
       xhr.onerror = () => reject(new Error("Network error during upload"));
       xhr.send(fd);
     });
