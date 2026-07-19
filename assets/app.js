@@ -145,6 +145,104 @@ async function renderNavAccount() {
   }
 }
 
+/* Custom glass dropdown — replaces native <select> so the open list
+   isn't rendered by the OS (which ignores our CSS and shows a plain
+   white popup). `container` is an empty element that becomes the
+   widget. Returns { get value(), set value(v), onChange(fn) }. */
+function createGlassDropdown(container, options, opts) {
+  opts = opts || {};
+  const placeholder = opts.placeholder || "Select…";
+  let value = opts.value || "";
+  let changeHandlers = [];
+
+  container.classList.add("gdrop");
+  container.innerHTML = `
+    <button type="button" class="gdrop-btn">
+      <span class="gdrop-label">${value ? escapeHTML(value) : placeholder}</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+    <div class="gdrop-panel">
+      <div class="gdrop-list"></div>
+    </div>`;
+
+  const btn = container.querySelector(".gdrop-btn");
+  const label = container.querySelector(".gdrop-label");
+  const panel = container.querySelector(".gdrop-panel");
+  const list = container.querySelector(".gdrop-list");
+
+  function renderOptions() {
+    list.innerHTML = options.map(o =>
+      `<div class="gdrop-opt${o === value ? " selected" : ""}" data-v="${escapeHTML(o)}">${escapeHTML(o)}</div>`
+    ).join("");
+  }
+  renderOptions();
+
+  function open() {
+    document.querySelectorAll(".gdrop.open").forEach(d => { if (d !== container) d.classList.remove("open"); });
+    container.classList.add("open");
+  }
+  function close() { container.classList.remove("open"); }
+
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    container.classList.contains("open") ? close() : open();
+  });
+  document.addEventListener("click", (e) => { if (!container.contains(e.target)) close(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+
+  list.addEventListener("click", (e) => {
+    const opt = e.target.closest(".gdrop-opt");
+    if (!opt) return;
+    value = opt.dataset.v;
+    label.textContent = value || placeholder;
+    renderOptions();
+    close();
+    changeHandlers.forEach(fn => fn(value));
+  });
+
+  return {
+    get value() { return value; },
+    set value(v) {
+      value = v;
+      label.textContent = value || placeholder;
+      renderOptions();
+    },
+    onChange(fn) { changeHandlers.push(fn); },
+  };
+}
+
+/* Custom pill-toggle group — same visual language as the category
+   picker, usable anywhere a multi-select checkbox list is needed
+   without native checkbox squares showing through. */
+function createPillToggleGroup(container, items, opts) {
+  opts = opts || {};
+  const selected = new Set(opts.selected || []);
+  let changeHandlers = [];
+
+  container.classList.add("pill-toggle-group");
+  container.innerHTML = items.map(item =>
+    `<button type="button" class="pill-toggle${selected.has(item) ? " active" : ""}" data-v="${escapeHTML(item)}">${escapeHTML(item)}</button>`
+  ).join("");
+
+  container.addEventListener("click", (e) => {
+    const btn = e.target.closest(".pill-toggle");
+    if (!btn) return;
+    const v = btn.dataset.v;
+    if (selected.has(v)) selected.delete(v); else selected.add(v);
+    btn.classList.toggle("active");
+    changeHandlers.forEach(fn => fn([...selected]));
+  });
+
+  return {
+    get value() { return [...selected]; },
+    clear() {
+      selected.clear();
+      container.querySelectorAll(".pill-toggle").forEach(b => b.classList.remove("active"));
+    },
+    onChange(fn) { changeHandlers.push(fn); },
+  };
+}
+
 /* Read a File input as a resized, compressed data URL so avatars/
    thumbnails stay well under KV's value size limits. */
 function fileToResizedDataURL(file, maxDim, quality) {

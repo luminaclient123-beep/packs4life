@@ -38,14 +38,12 @@
       <aside class="filter-sidebar glass">
         <div>
           <span class="filter-group-label">Version</span>
-          <select id="version-filter">
-            <option value="">All versions</option>
-          </select>
+          <div id="version-filter"></div>
         </div>
 
         <div>
           <span class="filter-group-label">Categories</span>
-          <div class="filter-cats" id="category-filters"></div>
+          <div id="category-filters"></div>
         </div>
 
         <button class="filter-clear" id="clear-filters">Clear filters</button>
@@ -67,50 +65,30 @@
 <script>
 let allPacks = [];
 let sortMode = "new";
-let activeCategories = new Set();
-let activeVersion = "";
 
-// Populate version dropdown
-const versionSelect = document.getElementById("version-filter");
-MC_VERSIONS.forEach(v => {
-  const opt = document.createElement("option");
-  opt.value = v;
-  opt.textContent = v;
-  versionSelect.appendChild(opt);
-});
-versionSelect.addEventListener("change", () => {
-  activeVersion = versionSelect.value;
-  render();
-});
+// Version dropdown (custom glass widget)
+const versionDropdown = createGlassDropdown(document.getElementById("version-filter"), ["All versions", ...MC_VERSIONS], { value: "All versions" });
+versionDropdown.onChange(render);
 
-// Populate category checkboxes
-const catWrap = document.getElementById("category-filters");
-CATEGORIES.forEach(c => {
-  const id = `cat-${c.replace(/\s+/g, "-")}`;
-  const label = document.createElement("label");
-  label.innerHTML = `<input type="checkbox" id="${id}" value="${c}"><span>${c}</span>`;
-  catWrap.appendChild(label);
-  label.querySelector("input").addEventListener("change", (e) => {
-    if (e.target.checked) activeCategories.add(c); else activeCategories.delete(c);
-    render();
-  });
-});
+// Category pill toggles
+const categoryToggles = createPillToggleGroup(document.getElementById("category-filters"), CATEGORIES);
+categoryToggles.onChange(render);
 
 document.getElementById("clear-filters").addEventListener("click", () => {
-  activeCategories.clear();
-  activeVersion = "";
-  versionSelect.value = "";
-  catWrap.querySelectorAll("input").forEach(i => i.checked = false);
+  categoryToggles.clear();
+  versionDropdown.value = "All versions";
   render();
 });
 
 function render() {
   const q = document.getElementById("search").value.trim().toLowerCase();
+  const activeVersion = versionDropdown.value === "All versions" ? "" : versionDropdown.value;
+  const activeCategories = categoryToggles.value;
   let list = allPacks.filter(p => {
     const matchesQ = !q || p.name.toLowerCase().includes(q) || (p.description || "").toLowerCase().includes(q);
     const matchesVersion = !activeVersion || p.version === activeVersion;
-    const matchesCats = activeCategories.size === 0 ||
-      (p.categories || []).some(c => activeCategories.has(c));
+    const matchesCats = activeCategories.length === 0 ||
+      (p.categories || []).some(c => activeCategories.includes(c));
     return matchesQ && matchesVersion && matchesCats;
   });
 

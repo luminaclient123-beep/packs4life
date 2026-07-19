@@ -33,8 +33,8 @@
       </div>
 
       <div class="field">
-        <label for="version">Minecraft version</label>
-        <select id="version" required></select>
+        <label>Minecraft version</label>
+        <div id="version"></div>
       </div>
 
       <div class="field">
@@ -44,7 +44,7 @@
 
       <div class="field">
         <label>Categories</label>
-        <div class="cat-picker" id="cat-picker"></div>
+        <div id="cat-picker"></div>
       </div>
 
       <div class="field">
@@ -100,21 +100,12 @@ const dzDefault = document.getElementById("dz-default");
 let chosenFile = null;
 let chosenThumbDataUrl = null;
 
-// Version dropdown
-const versionSelect = document.getElementById("version");
-MC_VERSIONS.forEach(v => {
-  const opt = document.createElement("option");
-  opt.value = v; opt.textContent = v;
-  versionSelect.appendChild(opt);
-});
+// Version dropdown (custom glass widget — native <select> popups
+// ignore CSS and render as plain white OS lists)
+const versionDropdown = createGlassDropdown(document.getElementById("version"), MC_VERSIONS, { placeholder: "Choose a version…" });
 
-// Category picker
-const catPicker = document.getElementById("cat-picker");
-CATEGORIES.forEach(c => {
-  const label = document.createElement("label");
-  label.innerHTML = `<input type="checkbox" value="${c}"><span>${c}</span>`;
-  catPicker.appendChild(label);
-});
+// Category picker (custom pill toggles)
+const catPicker = createPillToggleGroup(document.getElementById("cat-picker"), CATEGORIES);
 
 (async function gate() {
   const res = await fetch("/api/auth/me");
@@ -217,13 +208,13 @@ document.getElementById("upload-form").addEventListener("submit", async (e) => {
   btn.textContent = "Uploading…";
   track.classList.add("show");
 
-  const selectedCategories = [...catPicker.querySelectorAll("input:checked")].map(i => i.value);
+  if (!versionDropdown.value) { showMsg("Choose a Minecraft version.", "err"); return; }
 
   const fd = new FormData();
   fd.append("name", document.getElementById("name").value.trim());
-  fd.append("version", versionSelect.value);
+  fd.append("version", versionDropdown.value);
   fd.append("description", document.getElementById("description").value.trim());
-  fd.append("categories", selectedCategories.join(","));
+  fd.append("categories", catPicker.value.join(","));
   fd.append("youtube", ytInput.value.trim());
   fd.append("file", chosenFile);
   if (chosenThumbDataUrl) {
