@@ -8,112 +8,76 @@
 <link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
-<div class="shell">
-  <aside class="sidebar">
-    <div class="brand">
-      <div class="brand-mark"></div>
-      <div>
-        <div class="brand-name">Packs4Life</div>
-        <div class="brand-sub">Minecraft texture packs</div>
-      </div>
-    </div>
-    <div class="nav-label">Navigate</div>
-    <a class="nav-item" href="/index.html">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7M5 10v10h14V10"/></svg>
-      Home
-    </a>
-    <a class="nav-item" href="/packs.html">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8L12 3 3 8l9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/></svg>
-      Browse Packs
-    </a>
-    <a class="nav-item active" href="/upload.html">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M6 10l6-6 6 6"/><path d="M4 20h16"/></svg>
-      Upload a Pack <span class="dot"></span>
-    </a>
-  </aside>
 
-  <div>
-    <div class="topbar">
-      <div class="tabs">
-        <a class="tab" href="/index.html">Home</a>
-        <a class="tab" href="/packs.html">Packs</a>
-        <a class="tab active" href="/upload.html">Upload</a>
-      </div>
-      <div id="nav-account" class="status-pill">…</div>
-    </div>
-
-    <main class="main" style="max-width:640px;">
-      <span class="eyebrow"><span class="blip"></span> takes about a minute</span>
-      <h1 style="font-size:36px;margin-top:14px;">Upload a texture pack</h1>
-      <p style="color:var(--muted);margin-top:8px;">Fill in the details and drop your <code class="mono">.zip</code>. Once it uploads, it shows up on the hub for everyone — no review queue.</p>
-
-      <form class="panel" id="upload-form" style="margin-top:26px;">
-        <div class="field">
-          <label for="name">Pack name</label>
-          <input type="text" id="name" required maxlength="60" placeholder="e.g. Frostbite 32x">
-        </div>
-
-        <div class="field">
-          <label for="version">Version</label>
-          <input type="text" id="version" required maxlength="20" placeholder="e.g. v1.0 or 1.21.4">
-        </div>
-
-        <div class="field">
-          <label for="description">Description</label>
-          <textarea id="description" required maxlength="400" placeholder="What does this pack change? Resolution, theme, what it's built for…"></textarea>
-        </div>
-
-        <div class="field">
-          <label>Categories</label>
-          <div class="category-picker" id="category-picker">
-            <label class="category-option" data-category="pvp">
-              <input type="checkbox" value="pvp"> 🟩 PvP
-            </label>
-            <label class="category-option" data-category="fps">
-              <input type="checkbox" value="fps"> 🟦 FPS
-            </label>
-            <label class="category-option" data-category="gui">
-              <input type="checkbox" value="gui"> 🟪 GUI
-            </label>
-            <label class="category-option" data-category="faithful">
-              <input type="checkbox" value="faithful"> 🟧 Faithful
-            </label>
-            <label class="category-option" data-category="horror">
-              <input type="checkbox" value="horror"> 🔴 Horror
-            </label>
-          </div>
-        </div>
-
-        <div class="field">
-          <label>Pack file (.zip)</label>
-          <div class="dropzone" id="dropzone">
-            <div id="dz-default">
-              <p><strong style="color:var(--text)">Click to choose a file</strong> or drag one here</p>
-              <p>.zip only, up to 18MB</p>
-            </div>
-            <div class="zip-name" id="zip-name" style="display:none;"></div>
-          </div>
-          <input type="file" id="file" accept=".zip" style="display:none;">
-        </div>
-
-        <div class="progress-track" id="progress-track">
-          <div class="progress-fill" id="progress-fill"></div>
-        </div>
-
-        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px;" id="submit-btn">
-          Upload to the hub
-        </button>
-
-        <div class="form-msg" id="form-msg"></div>
-      </form>
-    </main>
-
-    <footer class="foot">
-      <span>Packs4Life</span>
-      <span class="mono">hosted on cloudflare pages</span>
-    </footer>
+<div class="topbar glass">
+  <div class="topbar-left">
+    <div class="topbar-mark"></div>
+    <div class="topbar-name">Packs<span>4</span>Life</div>
+  </div>
+  <nav class="topbar-nav">
+    <a class="topbar-link" href="/index.html">Home</a>
+    <a class="topbar-link" href="/packs.html">Browse Packs</a>
+    <a class="topbar-link active" href="/upload.html">Upload</a>
+  </nav>
+  <div class="topbar-right">
+    <div class="status-pill"><span class="blip"></span> hub online</div>
   </div>
 </div>
+
+<main class="page" style="max-width:600px;padding-top:50px;">
+  <span class="hero-eyebrow"><span class="blip"></span> Share it with everyone</span>
+  <h1 style="font-family:var(--font-display);font-weight:800;font-size:clamp(28px,4.5vw,38px);margin-top:16px;letter-spacing:-.02em;">Upload a texture pack</h1>
+  <p style="color:var(--muted);margin-top:8px;">Fill in the details and drop your <code class="mono">.zip</code>. Once it uploads, it shows up on the hub for everyone — no review queue.</p>
+
+  <form class="panel" id="upload-form" style="margin-top:26px;">
+    <div class="field">
+      <label for="name">Pack name</label>
+      <input type="text" id="name" required maxlength="60" placeholder="e.g. Frostbite 32x">
+    </div>
+
+    <div class="field">
+      <label for="version">Version</label>
+      <input type="text" id="version" required maxlength="20" placeholder="e.g. v1.0 or 1.21.4">
+    </div>
+
+    <div class="field">
+      <label for="author">Your name</label>
+      <input type="text" id="author" required maxlength="40" placeholder="e.g. Pigman">
+    </div>
+
+    <div class="field">
+      <label for="description">Description</label>
+      <textarea id="description" required maxlength="400" placeholder="What does this pack change? Resolution, theme, what it's built for…"></textarea>
+    </div>
+
+    <div class="field">
+      <label>Pack file (.zip)</label>
+      <div class="dropzone" id="dropzone">
+        <div id="dz-default">
+          <p><strong style="color:var(--white)">Click to choose a file</strong> or drag one here</p>
+          <p>.zip only, up to 200MB</p>
+        </div>
+        <div class="zip-name" id="zip-name" style="display:none;"></div>
+      </div>
+      <input type="file" id="file" accept=".zip" style="display:none;">
+    </div>
+
+    <div class="progress-track" id="progress-track">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-block" style="margin-top:8px;" id="submit-btn">
+      Upload to the hub
+    </button>
+
+    <div class="form-msg" id="form-msg"></div>
+  </form>
+</main>
+
+<footer class="foot">
+  <span>Packs4Life — community texture pack hub</span>
+  <span class="mono">hosted on cloudflare pages</span>
+</footer>
 
 <script src="/assets/app.js"></script>
 <script>
@@ -122,36 +86,6 @@ const fileInput = document.getElementById("file");
 const zipName = document.getElementById("zip-name");
 const dzDefault = document.getElementById("dz-default");
 let chosenFile = null;
-let currentUser = null;
-
-initAccountMenu("nav-account");
-
-(async function gate() {
-  const res = await fetch("/api/auth/me");
-  const data = await res.json();
-  currentUser = data.user;
-
-  if (!currentUser) {
-    document.getElementById("upload-form").innerHTML = `
-      <div class="empty-state">
-        <h3>Sign in to upload</h3>
-        <p>You need a Packs4Life account to share a pack with everyone.</p>
-        <a class="btn btn-primary" href="/login.html?return_to=/upload.html" style="margin-top:14px;display:inline-flex;">Sign in</a>
-      </div>`;
-  }
-})();
-
-
-document.querySelectorAll(".category-option").forEach((opt) => {
-  const input = opt.querySelector("input");
-  input.addEventListener("change", () => {
-    opt.classList.toggle("checked", input.checked);
-  });
-});
-
-function getSelectedCategories() {
-  return [...document.querySelectorAll(".category-option input:checked")].map((i) => i.value);
-}
 
 dropzone.addEventListener("click", () => fileInput.click());
 ["dragover", "dragenter"].forEach(ev =>
@@ -173,8 +107,8 @@ function setFile(f) {
     showMsg("Only .zip files are accepted.", "err");
     return;
   }
-  if (f.size > 18 * 1024 * 1024) {
-    showMsg("File is over the 18MB limit.", "err");
+  if (f.size > 200 * 1024 * 1024) {
+    showMsg("File is over the 200MB limit.", "err");
     return;
   }
   chosenFile = f;
@@ -192,7 +126,6 @@ function showMsg(text, kind) {
 document.getElementById("upload-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   if (!chosenFile) { showMsg("Choose a .zip file first.", "err"); return; }
-  if (!getSelectedCategories().length) { showMsg("Pick at least one category.", "err"); return; }
 
   const btn = document.getElementById("submit-btn");
   const track = document.getElementById("progress-track");
@@ -204,8 +137,8 @@ document.getElementById("upload-form").addEventListener("submit", async (e) => {
   const fd = new FormData();
   fd.append("name", document.getElementById("name").value.trim());
   fd.append("version", document.getElementById("version").value.trim());
+  fd.append("author", document.getElementById("author").value.trim());
   fd.append("description", document.getElementById("description").value.trim());
-  fd.append("categories", JSON.stringify(getSelectedCategories()));
   fd.append("file", chosenFile);
 
   try {
