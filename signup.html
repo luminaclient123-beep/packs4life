@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign up — Packs4Life</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+<div class="shell">
+  <div class="topbar glass">
+    <a class="brand" href="/index.html" style="text-decoration:none;">
+      <div class="brand-mark"></div>
+      <div class="brand-name">Packs<span>4</span>Life</div>
+    </a>
+  </div>
+
+  <main class="main" style="max-width:380px;margin:0 auto;padding-top:80px;">
+    <span class="eyebrow"><span class="blip"></span> Join the hub</span>
+    <h1 style="font-family:var(--font-display);font-weight:800;font-size:30px;margin-top:16px;letter-spacing:-.02em;">Create an account</h1>
+    <p style="color:var(--muted);margin-top:8px;">Takes a minute. You'll be able to upload packs and get a profile page right after.</p>
+
+    <form class="panel" id="signup-form" style="margin-top:24px;">
+      <div class="field">
+        <label for="name">Display name</label>
+        <input type="text" id="name" required maxlength="40" autocomplete="nickname">
+      </div>
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" required autocomplete="email">
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" required minlength="8" autocomplete="new-password">
+        <p style="color:var(--muted);font-size:11.5px;margin-top:5px;">At least 8 characters.</p>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;" id="submit-btn">Create account</button>
+      <div class="form-msg" id="form-msg"></div>
+    </form>
+
+    <p style="text-align:center;margin-top:18px;color:var(--muted);font-size:13px;">
+      Already have an account? <a href="/login.html" style="color:var(--green-soft);font-weight:700;">Sign in</a>
+    </p>
+    <a href="/index.html" style="display:block;text-align:center;margin-top:14px;color:var(--muted);font-size:12.5px;">← back to the hub</a>
+  </main>
+
+  <footer class="foot">
+    <span>Packs4Life — community texture pack hub</span>
+    <span class="mono">hosted on cloudflare pages</span>
+  </footer>
+</div>
+
+<script>
+const returnTo = new URLSearchParams(location.search).get("return_to") || "/profile.html";
+
+document.getElementById("signup-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById("submit-btn");
+  const msg = document.getElementById("form-msg");
+  btn.disabled = true;
+  btn.textContent = "Creating account…";
+
+  try {
+    const res = await fetch("/api/auth/signup", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        name: document.getElementById("name").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        password: document.getElementById("password").value,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Could not create account.");
+    location.href = returnTo;
+  } catch (err) {
+    msg.textContent = err.message;
+    msg.className = "form-msg show err";
+    btn.disabled = false;
+    btn.textContent = "Create account";
+  }
+});
+</script>
+</body>
+</html>

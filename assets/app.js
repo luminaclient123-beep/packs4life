@@ -6,17 +6,18 @@ function hashStr(s) {
   return Math.abs(h);
 }
 
-// Deterministic 4x4 pixel glyph per pack, so every pack gets a
+// Deterministic 4x4 pixel glyph per pack/user, so every card gets a
 // recognizable little "block" icon without anyone drawing it by hand.
-function pixelIconHTML(seed) {
-  const h = hashStr(seed);
+function pixelIconHTML(seed, cellPx) {
+  const px = cellPx || 5;
+  const h = hashStr(String(seed || "pack"));
   let cells = "";
   for (let i = 0; i < 16; i++) {
     const on = (h >> i) & 1;
-    const bg = on ? (i % 3 === 0 ? "var(--lime)" : "var(--teal)") : "var(--line)";
-    cells += `<i style="background:${bg}"></i>`;
+    const bg = on ? "var(--green)" : "var(--line)";
+    cells += `<i style="background:${bg};opacity:${on ? 0.85 : 0.4}"></i>`;
   }
-  return `<div class="pixel-icon">${cells}</div>`;
+  return `<div class="pixel-icon" style="grid-template-columns:repeat(4,${px}px);grid-template-rows:repeat(4,${px}px);">${cells}</div>`;
 }
 
 function fmtBytes(bytes) {
@@ -28,6 +29,7 @@ function fmtBytes(bytes) {
 }
 
 function timeAgo(iso) {
+  if (!iso) return "some time ago";
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return "just now";
@@ -64,7 +66,25 @@ function packCardHTML(p) {
 }
 
 function escapeHTML(str) {
-  return String(str).replace(/[&<>"']/g, (c) => ({
+  return String(str ?? "").replace(/[&<>"']/g, (c) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
   }[c]));
+}
+
+/* Shared topbar auth widget — every page with a #nav-account element
+   gets its sign-in state filled in the same way. */
+async function renderNavAccount() {
+  const nav = document.getElementById("nav-account");
+  if (!nav) return null;
+  try {
+    const res = await fetch("/api/auth/me");
+    const data = await res.json();
+    nav.innerHTML = data.user
+      ? `<a href="/profile.html" style="color:var(--text);font-weight:700;">${escapeHTML(data.user.name)}</a>`
+      : `<a href="/login.html" style="color:var(--text);font-weight:700;">Sign in</a>`;
+    return data.user;
+  } catch {
+    nav.innerHTML = `<a href="/login.html" style="color:var(--text);font-weight:700;">Sign in</a>`;
+    return null;
+  }
 }

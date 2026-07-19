@@ -1,5 +1,12 @@
-// GET /api/download/:id — streams the zip from R2 and bumps the
-// download counter in the KV index.
+// GET /api/download/:id — reads the base64 zip out of KV, decodes it,
+// streams it back, and bumps the download counter in the index.
+
+function base64ToBytes(base64) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
 
 export async function onRequestGet(context) {
   const { env, params } = context;
@@ -14,11 +21,13 @@ export async function onRequestGet(context) {
   }
 
   const record = packs[idx];
-  const object = await env.PACKS_BUCKET.get(record.objectKey);
+  const base64 = await env.PACKS_KV.get(record.fileKey);
 
-  if (!object) {
+  if (!base64) {
     return new Response("File missing from storage.", { status: 404 });
   }
+
+  const bytes = base64ToBytes(base64);
 
   // Fire-and-forget the counter bump so the download itself isn't delayed.
   packs[idx].downloads = (record.downloads || 0) + 1;
@@ -29,5 +38,5 @@ export async function onRequestGet(context) {
   headers.set("content-disposition", `attachment; filename="${record.slug}.zip"`);
   headers.set("cache-control", "no-store");
 
-  return new Response(object.body, { headers });
+  return new Response(bytes, { headers });
 }

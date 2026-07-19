@@ -1,79 +1,104 @@
 # Packs4Life
 
-A community texture pack hub. Static HTML/CSS frontend + Cloudflare Pages
-Functions backend. Anyone can upload a `.zip` pack; it's stored in R2 and
-immediately shows up for everyone on `/packs.html`.
+A community texture pack hub with accounts. Static HTML/CSS frontend +
+Cloudflare Pages Functions backend. Anyone can browse and download;
+uploading requires a free Packs4Life account (email + password), and
+every account gets a profile page listing their packs.
 
 ## Structure
 
 ```
-index.html          Home page
-packs.html           Browse / search all packs
-upload.html          Upload form
-pack.html            Single pack detail + download button
-assets/style.css     All styling
-assets/app.js         Shared client logic (fetch packs, render cards)
-functions/api/packs.js            GET  /api/packs        -> list all packs
-functions/api/upload.js           POST /api/upload        -> upload a pack
-functions/api/download/[id].js    GET  /api/download/:id  -> download a pack's zip
-wrangler.toml         Cloudflare bindings config
+index.html, packs.html, upload.html, pack.html   Public pages
+login.html, signup.html, profile.html             Account pages
+assets/style.css, assets/app.js                    Shared styling / client logic
+lib/auth.js                                        Sessions, cookies, password hashing
+functions/api/packs.js               GET  /api/packs             list all packs
+functions/api/upload.js              POST /api/upload             upload a pack (requires login)
+functions/api/download/[id].js       GET  /api/download/:id       download a pack's zip
+functions/api/auth/signup.js         POST /api/auth/signup        create an account
+functions/api/auth/login.js          POST /api/auth/login         sign in
+functions/api/auth/me.js             GET  /api/auth/me            current logged-in user
+functions/api/auth/logout.js         POST /api/auth/logout        sign out
+functions/api/profile/[id].js        GET  /api/profile/:id        public profile + their packs
+functions/api/profile-update.js      POST /api/profile-update     edit your own name/bio
+wrangler.toml                        Cloudflare bindings config
 ```
 
-## How storage works
+## Storage
 
-- **R2 bucket** (`PACKS_BUCKET`) holds the actual `.zip` files.
-- **KV namespace** (`PACKS_KV`) holds one JSON key, `packs:index`, which is
-  an array of every pack's metadata (name, version, author, description,
-  size, download count, upload date). The whole site reads from this one
-  key, so every visitor sees the same list — that's the "cloud" part.
+Everything lives in one **KV namespace** (`PACKS_KV`) — no external
+accounts, no third-party login provider, nothing to configure outside
+Cloudflare itself:
 
-No database, no accounts. It's intentionally simple so it fits inside
-Cloudflare's free tier for small/medium communities.
+- `packs:index` — JSON array of every pack's metadata
+- `file:<id>` — a pack's zip, base64-encoded (18MB raw file cap)
+- `user:<id>` — a user's profile: name, email, password hash + salt, bio
+- `user-email:<email>` — maps an email to a user id, for login lookups
+- `session:<token>` — maps a session token to a user, expires after 30 days
+
+## How accounts work
+
+- Signup takes a name, email, and password (min 8 characters).
+- Passwords are **never stored in plain text** — only a PBKDF2-SHA256
+  hash (100,000 iterations) plus the random salt used to produce it,
+  via the Web Crypto API built into Cloudflare Workers.
+- Sessions are random 32-byte tokens stored in KV and referenced by an
+  `HttpOnly`, `Secure` cookie — not readable by page JavaScript, not
+  vulnerable to basic XSS token theft.
+- Uploading is blocked **server-side** if you're not logged in (checked
+  in `functions/api/upload.js`), not just hidden in the UI, so it can't
+  be bypassed by editing the page.
+
+This is intentionally simple and has no external dependencies — no
+Google, no OAuth setup, no extra accounts needed beyond Cloudflare and
+GitHub. The tradeoff versus something like Google sign-in: no "forgot
+password" flow, no email verification, and you're fully responsible for
+this being the entire security model. Fine for a small community hub;
+if it grows a lot, look at adding email verification and possibly a
+password reset flow (would need an email-sending service, e.g.
+Cloudflare Email Workers or a third-party API).
 
 ## Deploying on Cloudflare Pages
 
 1. **Push this folder to a GitHub repo.**
 
-2. **Create the R2 bucket:**
-   ```
-   npx wrangler r2 bucket create packs4life-files
-   ```
-
-3. **Create the KV namespace:**
+2. **Create the KV namespace** (skip if you already have one from a
+   previous version):
    ```
    npx wrangler kv namespace create PACKS_KV
    ```
-   This prints an `id`. Put it into `wrangler.toml` in place of
-   `REPLACE_WITH_YOUR_KV_NAMESPACE_ID`.
+   Put the printed `id` into `wrangler.toml`, in quotes.
 
-4. **Create the Pages project** in the Cloudflare dashboard:
+3. **Create the Pages project** in the Cloudflare dashboard:
    Workers & Pages → Create → Pages → Connect to Git → pick this repo.
-   - Build command: (leave blank — it's static)
+   - Build command: leave blank
    - Build output directory: `/`
 
-5. **Add the bindings** on the Pages project, under
-   Settings → Functions:
-   - R2 bucket binding: variable name `PACKS_BUCKET` → bucket `packs4life-files`
-   - KV namespace binding: variable name `PACKS_KV` → the namespace you created
+4. **Add the KV binding** — Settings → Functions → KV namespace
+   bindings → variable name `PACKS_KV` → your namespace.
 
-6. **Redeploy** after adding bindings (bindings only apply to new deployments).
+5. **Redeploy** (Deployments tab → Retry deployment) so the binding
+   takes effect.
 
-That's it — uploads on the live site will now persist in R2/KV and be
-visible to every visitor.
+No environment variables or third-party credentials needed — this
+version doesn't talk to Google or anything outside Cloudflare.
 
 ## Local development
 
 ```
-npx wrangler pages dev . --r2=PACKS_BUCKET --kv=PACKS_KV
+npx wrangler pages dev . --kv=PACKS_KV
 ```
 
-## Notes / limits
+## Customizing
 
-- Upload cap is 200MB per file (adjustable in `functions/api/upload.js`).
-- The KV index keeps the most recent 500 packs; older ones roll off the
-  list (files stay in R2, only the index trims). Raise `MAX_LIST` in
-  `upload.js` if you need more.
-- There's no moderation queue — anything uploaded appears instantly. If
-  you want review-before-publish later, that just means writing new
-  uploads to a `pending:` key instead of `packs:index` and adding an
-  admin action to promote them.
+See the comment block at the top of `assets/style.css` for quick
+pointers on changing colors, fonts, and the logo mark.
+
+## Notes
+
+- No moderation queue — uploads appear instantly for any signed-in user.
+- No email verification — anyone can sign up with any email address
+  they type in (it's not checked as belonging to them).
+- The KV index keeps the most recent 500 packs; older ones roll off
+  the list (their file keys stay in KV, only the index trims). Raise
+  `MAX_LIST` in `upload.js` if you need more.

@@ -10,69 +10,40 @@
 <body>
 <div class="shell">
 
-  <aside class="sidebar">
-    <div class="brand">
+  <div class="topbar glass">
+    <a class="brand" href="/index.html" style="text-decoration:none;">
       <div class="brand-mark"></div>
-      <div>
-        <div class="brand-name">Packs4Life</div>
-        <div class="brand-sub">Community Texture Hub</div>
-      </div>
-    </div>
-
-    <div class="nav-label">Navigate</div>
-    <a class="nav-item" href="/index.html">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7M5 10v10h14V10"/></svg>
-      Home
+      <div class="brand-name">Packs<span>4</span>Life</div>
     </a>
-    <a class="nav-item active" href="/packs.html">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8L12 3 3 8l9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/></svg>
-      Browse Packs <span class="dot"></span>
-    </a>
-    <a class="nav-item" href="/upload.html">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M6 10l6-6 6 6"/><path d="M4 20h16"/></svg>
-      Upload a Pack
-    </a>
-
-    <div class="sidebar-foot">
-      <a class="side-cta" href="/upload.html">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-        Add your pack
-      </a>
+    <div class="tabs">
+      <a class="tab" href="/index.html">Home</a>
+      <a class="tab active" href="/packs.html">Browse Packs</a>
+      <a class="tab" href="/upload.html">Upload</a>
     </div>
-  </aside>
-
-  <div>
-    <div class="topbar">
-      <div class="tabs">
-        <a class="tab" href="/index.html">Home</a>
-        <a class="tab active" href="/packs.html">Packs</a>
-        <a class="tab" href="/upload.html">Upload</a>
-      </div>
-      <div class="status-pill"><span class="blip"></span> hub online</div>
-    </div>
-
-    <main class="main">
-      <span class="eyebrow"><span class="blip"></span> <span id="count-label">Loading…</span></span>
-      <h1 style="font-size:38px;margin-top:14px;">All texture packs</h1>
-      <p style="color:var(--muted);margin-top:8px;max-width:520px;">Everything the community has uploaded, newest first. Click a pack for the full description and download.</p>
-
-      <div class="filter-bar" style="margin-top:28px;">
-        <input type="search" id="search" placeholder="Search packs by name or tag…">
-        <button class="chip active" data-sort="new">Newest</button>
-        <button class="chip" data-sort="downloads">Most downloaded</button>
-        <button class="chip" data-sort="az">A–Z</button>
-      </div>
-
-      <div class="grid" id="all-grid">
-        <div class="empty-state" style="grid-column:1/-1">Loading packs…</div>
-      </div>
-    </main>
-
-    <footer class="foot">
-      <span>Packs4Life — community texture pack hub</span>
-      <span class="mono">hosted on cloudflare pages</span>
-    </footer>
+    <div id="nav-account" class="status-pill">…</div>
   </div>
+
+  <main class="main" style="padding-top:50px;">
+    <span class="eyebrow"><span class="blip"></span> <span id="count-label">Loading…</span></span>
+    <h1 style="font-family:var(--font-display);font-weight:800;font-size:clamp(30px,4.5vw,44px);margin-top:16px;letter-spacing:-.02em;">All texture packs</h1>
+    <p style="color:var(--muted);margin-top:8px;max-width:520px;">Everything the community has uploaded, newest first. Click a pack for the full description and download.</p>
+
+    <div class="filter-bar" style="margin-top:28px;">
+      <input type="search" id="search" placeholder="Search packs by name or tag…">
+      <button class="chip active" data-sort="new">Newest</button>
+      <button class="chip" data-sort="downloads">Most downloaded</button>
+      <button class="chip" data-sort="az">A–Z</button>
+    </div>
+
+    <div class="grid" id="all-grid" style="margin-top:24px;">
+      <div class="empty-state" style="grid-column:1/-1">Loading packs…</div>
+    </div>
+  </main>
+
+  <footer class="foot">
+    <span>Packs4Life — community texture pack hub</span>
+    <span class="mono">hosted on cloudflare pages</span>
+  </footer>
 </div>
 
 <script src="/assets/app.js"></script>
@@ -85,7 +56,6 @@ function render() {
   let list = allPacks.filter(p =>
     !q || p.name.toLowerCase().includes(q) || (p.description || "").toLowerCase().includes(q)
   );
-
   if (sortMode === "new") list.sort((a, b) => new Date(b.uploaded) - new Date(a.uploaded));
   if (sortMode === "downloads") list.sort((a, b) => (b.downloads || 0) - (a.downloads || 0));
   if (sortMode === "az") list.sort((a, b) => a.name.localeCompare(b.name));
@@ -94,10 +64,7 @@ function render() {
 
   const grid = document.getElementById("all-grid");
   if (!list.length) {
-    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
-      <h3>Nothing matches</h3>
-      <p>Try a different search, or <a href="/upload.html" style="color:var(--lime)">upload the first one</a>.</p>
-    </div>`;
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><h3>Nothing matches</h3><p>Try a different search, or <a href="/upload.html" style="color:var(--green-soft)">upload the first one</a>.</p></div>`;
     return;
   }
   grid.innerHTML = list.map(packCardHTML).join("");
@@ -113,13 +80,16 @@ document.querySelectorAll(".chip").forEach(chip => {
   });
 });
 
+renderNavAccount();
+
 (async function () {
+  const presetQ = new URLSearchParams(location.search).get("q");
+  if (presetQ) document.getElementById("search").value = presetQ;
   try {
     allPacks = await fetchPacks();
     render();
   } catch (e) {
-    document.getElementById("all-grid").innerHTML =
-      `<div class="empty-state" style="grid-column:1/-1">Couldn't reach the hub. Try refreshing.</div>`;
+    document.getElementById("all-grid").innerHTML = `<div class="empty-state" style="grid-column:1/-1">Couldn't reach the hub. Try refreshing.</div>`;
   }
 })();
 </script>

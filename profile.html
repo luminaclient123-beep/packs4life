@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profile — Packs4Life</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+<div class="shell">
+
+  <div class="topbar glass">
+    <a class="brand" href="/index.html" style="text-decoration:none;">
+      <div class="brand-mark"></div>
+      <div class="brand-name">Packs<span>4</span>Life</div>
+    </a>
+    <div class="tabs">
+      <a class="tab" href="/index.html">Home</a>
+      <a class="tab" href="/packs.html">Browse Packs</a>
+      <a class="tab" href="/upload.html">Upload</a>
+    </div>
+    <div id="nav-account" class="status-pill">…</div>
+  </div>
+
+  <main class="main" style="max-width:640px;padding-top:50px;" id="profile-main">
+    <div class="empty-state">Loading profile…</div>
+  </main>
+
+  <footer class="foot">
+    <span>Packs4Life — community texture pack hub</span>
+    <span class="mono">hosted on cloudflare pages</span>
+  </footer>
+</div>
+
+<script src="/assets/app.js"></script>
+<script>
+async function getMe() {
+  const res = await fetch("/api/auth/me");
+  const data = await res.json();
+  return data.user;
+}
+
+function renderNav(me) {
+  const el = document.getElementById("nav-account");
+  el.innerHTML = me
+    ? `<span style="color:var(--green-soft);font-weight:700;">${escapeHTML(me.name)}</span>`
+    : `<a href="/login.html" style="color:var(--text);font-weight:700;">Sign in</a>`;
+}
+
+function ownProfileHTML(me) {
+  return `
+    <div style="display:flex;align-items:center;gap:16px;">
+      ${me.avatar ? `<img src="${me.avatar}" width="64" height="64" style="border-radius:50%;border:1px solid var(--glass-border);">` : pixelIconHTML(me.id, 14)}
+      <div>
+        <h1 style="font-family:var(--font-display);font-weight:800;font-size:26px;letter-spacing:-.01em;">${escapeHTML(me.name)}</h1>
+        <div style="color:var(--muted);font-size:12.5px;">${escapeHTML(me.email || "")}</div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:24px;">
+      <div class="field">
+        <label for="name">Display name</label>
+        <input type="text" id="name" value="${escapeHTML(me.name)}" maxlength="40">
+      </div>
+      <div class="field">
+        <label for="bio">Bio</label>
+        <textarea id="bio" maxlength="300" placeholder="Tell people what you make...">${escapeHTML(me.bio || "")}</textarea>
+      </div>
+      <button class="btn btn-primary" id="save-btn">Save changes</button>
+      <div class="form-msg" id="save-msg"></div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;">
+      <button class="btn btn-ghost" id="logout-btn">Sign out</button>
+    </div>
+
+    <div class="section-head">
+      <span class="kicker">Your packs</span>
+      <span class="rule"></span>
+    </div>
+    <div class="grid" id="my-packs"><div class="empty-state" style="grid-column:1/-1">Loading…</div></div>
+  `;
+}
+
+function publicProfileHTML(user, packs) {
+  return `
+    <div style="display:flex;align-items:center;gap:16px;">
+      ${user.avatar ? `<img src="${user.avatar}" width="64" height="64" style="border-radius:50%;border:1px solid var(--glass-border);">` : pixelIconHTML(user.id, 14)}
+      <div>
+        <h1 style="font-family:var(--font-display);font-weight:800;font-size:26px;letter-spacing:-.01em;">${escapeHTML(user.name)}</h1>
+        <div style="color:var(--muted);font-size:12.5px;">member since ${new Date(user.joined).toLocaleDateString()}</div>
+      </div>
+    </div>
+    ${user.bio ? `<p style="color:var(--muted);margin-top:14px;max-width:520px;line-height:1.6;">${escapeHTML(user.bio)}</p>` : ""}
+
+    <div class="section-head">
+      <span class="kicker">Packs by ${escapeHTML(user.name)}</span>
+      <span class="rule"></span>
+    </div>
+    <div class="grid">
+      ${packs.length ? packs.map(packCardHTML).join("") : `<div class="empty-state" style="grid-column:1/-1">No packs uploaded yet.</div>`}
+    </div>
+  `;
+}
+
+(async function () {
+  const main = document.getElementById("profile-main");
+  const viewId = new URLSearchParams(location.search).get("id");
+  const me = await getMe();
+  renderNav(me);
+
+  if (viewId && (!me || viewId !== me.id)) {
+    try {
+      const res = await fetch(`/api/profile/${encodeURIComponent(viewId)}`);
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      main.innerHTML = publicProfileHTML(data.user, data.packs);
+    } catch {
+      main.innerHTML = `<div class="empty-state"><h3>Profile not found</h3></div>`;
+    }
+    return;
+  }
+
+  if (!me) {
+    main.innerHTML = `<div class="empty-state">
+      <h3>You're not signed in</h3>
+      <p>Sign in to view or edit your profile.</p>
+      <a class="btn btn-primary" href="/login.html" style="margin-top:14px;display:inline-flex;">Sign in</a>
+    </div>`;
+    return;
+  }
+
+  main.innerHTML = ownProfileHTML(me);
+
+  document.getElementById("save-btn").addEventListener("click", async () => {
+    const name = document.getElementById("name").value.trim();
+    const bio = document.getElementById("bio").value.trim();
+    const msg = document.getElementById("save-msg");
+    try {
+      const res = await fetch("/api/profile-update", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name, bio }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not save.");
+      msg.textContent = "Saved.";
+      msg.className = "form-msg show ok";
+    } catch (e) {
+      msg.textContent = e.message;
+      msg.className = "form-msg show err";
+    }
+  });
+
+  document.getElementById("logout-btn").addEventListener("click", async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    location.href = "/index.html";
+  });
+
+  try {
+    const packs = await fetchPacks();
+    const mine = packs.filter((p) => p.authorId === me.id);
+    const grid = document.getElementById("my-packs");
+    grid.innerHTML = mine.length ? mine.map(packCardHTML).join("") : `<div class="empty-state" style="grid-column:1/-1">You haven't uploaded anything yet.</div>`;
+  } catch {}
+})();
+</script>
+</body>
+</html>
